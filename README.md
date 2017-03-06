@@ -2,7 +2,7 @@
 
 Most of the code in this repository will be from [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow).
 
-### Relevant Stuff
+### References
 - [Generating Images from Captions with Attention](https://arxiv.org/abs/1511.02793)
 - [IllustrationGAN](https://github.com/tdrussell/IllustrationGAN)
 - [https://arxiv.org/pdf/1605.05396.pdf](https://arxiv.org/pdf/1605.05396.pdf)
