@@ -1,6 +1,6 @@
+# Adpatation from yenchenlin's pix2pix-tensorflow WIP
 from __future__ import division
 import os
-import time
 import sys
 from glob import glob
 import tensorflow as tf

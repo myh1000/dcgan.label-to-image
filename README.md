@@ -1,6 +1,12 @@
 # dcgan.text-to-illus
 
-Most of the code in this repository will be from [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow).
+```main.py``` is based off of a standard DCGAN approach with a conditional layer.
+
+```main-p2p.py``` attempts to concat the layers at the start and and keep the old DCGAN format.
+
+## Acknowledgments
+
+Code borrows heavily from [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow) for ```main.py``` and [pix2pix-tensorflow](https://github.com/yenchenlin/pix2pix-tensorflow) for ```main-p2p.py```
 
 ### References
 - [Generating Images from Captions with Attention](https://arxiv.org/abs/1511.02793)

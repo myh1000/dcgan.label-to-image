@@ -1,3 +1,4 @@
+# Adpatation from carpedm20's DCGAN-tensorflow
 from __future__ import division
 import os
 import sys
@@ -14,7 +15,7 @@ from utils import *
 class txt2pic():
     def __init__(self, image_size=256, batch_size=64):
 
-        self.sess = tf.Session(config=tf.ConfigProto())
+        self.sess = tf.Session()
 
         self.batch_size = batch_size
         print("batch_size: %d" % self.batch_size)
@@ -80,7 +81,7 @@ class txt2pic():
         self.saver = tf.train.Saver()
 
     def train(self):
-        tf.global_variables_initializer().run(session=self.sess)
+        self.sess.run(tf.global_variables_initializer())
 
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
         data = glob(os.path.join("dataset", "*.png"))
@@ -104,7 +105,7 @@ class txt2pic():
                         resize_width=self.output_size) for batch_file in batch_files]
                 batch_images = np.array(batch).astype(np.float32)
                 batch_tags = np.zeros((self.batch_size , self.y_dim), dtype=np.float32)
-                batch_tags[:,1] = 1
+                batch_tags[:,1] = 1  # need actual tags later
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # noise
 
                 _, errD_fake, errD_real = self.sess.run([self.d_optim, self.d_loss_fake, self.d_loss_real], feed_dict={self.inputs: batch_images, self.z: batch_z, self.tags: batch_tags})
