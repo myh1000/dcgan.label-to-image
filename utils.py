@@ -2,20 +2,15 @@
 Some codes from https://github.com/Newmu/dcgan_code
 """
 from __future__ import division
-import math
-import json
-import random
 import scipy.misc
 import numpy as np
-from time import gmtime, strftime
-from six.moves import xrange
 import fire
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
 
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,
-              is_crop=True, is_grayscale=False):
+              is_crop=False, is_grayscale=False):
     image = imread(image_path, is_grayscale)
     return transform(image, input_height, input_width,
                    resize_height, resize_width, is_crop)
@@ -95,4 +90,4 @@ def make_gif(images, fname, duration=2, true_image=False):
     clip.write_gif(fname, fps = len(images) / duration)
 
 
-fire.Fire()
+# fire.Fire()

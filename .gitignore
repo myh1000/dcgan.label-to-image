@@ -1,2 +1,7 @@
 data/
-
+__pycache__/
+*.txt
+*.png
+*.jpg
+logs/
+*.pyc
