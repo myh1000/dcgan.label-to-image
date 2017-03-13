@@ -4,7 +4,9 @@ import os
 import sys
 from glob import glob
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
 import numpy as np
+import math
 from six.moves import xrange  # Compatability w/ Python3
 
 from ops import *
@@ -13,9 +15,7 @@ from utils import *
 # Use a CGAN with layer_size y class labels for the y_dim and concat it to the inputs of the generator and discriminator
 
 class txt2pic():
-    def __init__(self, image_size=256, batch_size=64):
-
-        self.sess = tf.Session()
+    def __init__(self, image_size=28, batch_size=64):
 
         self.batch_size = batch_size
         print("batch_size: %d" % self.batch_size)
@@ -62,6 +62,7 @@ class txt2pic():
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
 
         self.G = self.generator(self.z, self.tags)
+        self.sampler = self.sampler(self.z, self.tags)
         self.D, self.D_logits = self.discriminator(self.inputs, self.tags, reuse=False) # Real
         self.D_, self.D_logits_ = self.discriminator(self.G, self.tags, reuse=True)     # Fake
 
@@ -71,6 +72,7 @@ class txt2pic():
         self.d_loss = self.d_loss_real + self.d_loss_fake
 
         t_vars = tf.trainable_variables()
+        slim.model_analyzer.analyze_vars(t_vars, print_info=True)
 
         self.d_vars = [var for var in t_vars if 'd_' in var.name]
         self.g_vars = [var for var in t_vars if 'g_' in var.name]
@@ -78,14 +80,54 @@ class txt2pic():
         self.d_optim = tf.train.AdamOptimizer(0.0002, beta1=0.5).minimize(self.d_loss, var_list=self.d_vars)
         self.g_optim = tf.train.AdamOptimizer(0.0002, beta1=0.5).minimize(self.g_loss, var_list=self.g_vars)
 
-        self.saver = tf.train.Saver()
 
     def train(self):
+        self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.train.Saver()
 
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        data = glob(os.path.join("dataset", "*.png"))
-        counter = 1
+        # data = glob(os.path.join("dataset", "*.png"))
+        data_dir = os.path.join("./data", "")
+
+        fd = open(os.path.join(data_dir,'train-images-idx3-ubyte'))
+        loaded = np.fromfile(file=fd,dtype=np.uint8)
+        trX = loaded[16:].reshape((60000,28,28,1)).astype(np.float)
+
+        fd = open(os.path.join(data_dir,'train-labels-idx1-ubyte'))
+        loaded = np.fromfile(file=fd,dtype=np.uint8)
+        trY = loaded[8:].reshape((60000)).astype(np.float)
+
+        fd = open(os.path.join(data_dir,'t10k-images-idx3-ubyte'))
+        loaded = np.fromfile(file=fd,dtype=np.uint8)
+        teX = loaded[16:].reshape((10000,28,28,1)).astype(np.float)
+
+        fd = open(os.path.join(data_dir,'t10k-labels-idx1-ubyte'))
+        loaded = np.fromfile(file=fd,dtype=np.uint8)
+        teY = loaded[8:].reshape((10000)).astype(np.float)
+
+        trY = np.asarray(trY)
+        teY = np.asarray(teY)
+
+        X = np.concatenate((trX, teX), axis=0)
+        y = np.concatenate((trY, teY), axis=0).astype(np.int)
+
+        seed = 547
+        np.random.seed(seed)
+        np.random.shuffle(X)
+        np.random.seed(seed)
+        np.random.shuffle(y)
+
+        y_vec = np.zeros((len(y), self.y_dim), dtype=np.float)
+        for i, label in enumerate(y):
+          y_vec[i,y[i]] = 1.0
+
+        data = X/255.
+        tags = y_vec
+
+        if not os.path.exists("./samples"):
+            os.makedirs("./samples")
+        counter = 0
 
         if could_load:
             counter = checkpoint_counter
@@ -93,22 +135,40 @@ class txt2pic():
         else:
             print(" [!] Load failed...")
 
+        # print data[0]
+        # base = np.array([
+        #         get_image(batch_file,
+        #             input_height=self.image_size,
+        #             input_width=self.image_size,
+        #             resize_height=self.output_size,
+        #             resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
+        base = data[0:self.batch_size]
+        save_images(base, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "samples/training_ex.png")
+
         batch_idxs = len(data) // self.batch_size
+        print(batch_idxs)
+        print("Training Now...")
         for epoch in xrange(10000):
-            for idx in xrange(0, batch_idxs):
-                batch_files = data[idx*self.batch_size:(idx+1)*self.batch_size]
-                batch = [
-                    get_image(batch_file,
-                        input_height=self.image_size,
-                        input_width=self.image_size,
-                        resize_height=self.output_size,
-                        resize_width=self.output_size) for batch_file in batch_files]
-                batch_images = np.array(batch).astype(np.float32)
-                batch_tags = np.zeros((self.batch_size , self.y_dim), dtype=np.float32)
-                batch_tags[:,1] = 1  # need actual tags later
+            for idx in xrange(batch_idxs):
+                batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
+                # batch = [
+                #     get_image(batch_file,
+                #         input_height=self.image_size,
+                #         input_width=self.image_size,
+                #         resize_height=self.output_size,
+                #         resize_width=self.output_size) for batch_file in batch_files]
+                # batch_images = np.array(batch).astype(np.float32)
+                batch_tags = tags[idx*self.batch_size:(idx+1)*self.batch_size]
+                # batch_tags = np.zeros((self.batch_size , self.y_dim), dtype=np.float32)
+                # batch_tags[:,1] = 1  # need actual tags later
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # noise
 
-                _, errD_fake, errD_real = self.sess.run([self.d_optim, self.d_loss_fake, self.d_loss_real], feed_dict={self.inputs: batch_images, self.z: batch_z, self.tags: batch_tags})
+                _, errD = self.sess.run([self.d_optim, self.d_loss], feed_dict={self.inputs: batch_images, self.z: batch_z, self.tags: batch_tags})
+                # errD_fake = self.sess.run(self.d_loss_fake, feed_dict={self.z: batch_z, self.tags: batch_tags})
+                # errD_real = self.sess.run(self.d_loss_real, feed_dict={self.inputs: batch_images, self.tags: batch_tags})
+
+
+                # Maybe run g_optim twice -- look at carpedm20's code
                 _, errG = self.sess.run([self.g_optim, self.g_loss], feed_dict={self.z: batch_z, self.tags: batch_tags})
                 # errD_fake = self.d_loss_fake.eval({self.real_data: batch_images})
                 # errD_real = self.d_loss_real.eval({self.real_data: batch_images})
@@ -116,12 +176,19 @@ class txt2pic():
 
                 counter += 1
                 print("Epoch: [%2d] [%4d/%4d], d_loss: %.8f, g_loss: %.8f" \
-                    % (epoch, idx, batch_idxs, errD_fake+errD_real, errG))
+                        % (epoch, idx, batch_idxs, errD, errG))
 
-                if np.mod(counter, 10) == 1:
-                    samples = self.G.eval({self.z: batch_z, self.inputs: batch_images, self.y: batch_tags})
+                if np.mod(counter, 100) == 1:
+                    samples, d_loss, g_loss = self.sess.run(
+                        [self.sampler, self.d_loss, self.g_loss],
+                        feed_dict={
+                            self.z: batch_z,
+                            self.inputs: batch_images,
+                            self.tags: batch_tags
+                        }
+                    )
                     save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], './samples/train_{:02d}_{:04d}.png'.format(epoch, idx))
-                    print("saved sample")
+                    print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
                 if np.mod(counter, 500) == 2:
                   self.save(self.checkpoint_dir, counter)
 
@@ -174,6 +241,31 @@ class txt2pic():
 
             return tf.nn.sigmoid(h3), h3
 
+    def sampler(self, z, tags):
+        with tf.variable_scope("generator") as scope:
+            scope.reuse_variables()
+
+            s_h, s_w = self.output_size, self.output_size
+            s_h2, s_h4 = int(s_h/2), int(s_h/4)
+            s_w2, s_w4 = int(s_w/2), int(s_w/4)
+
+            yb = tf.reshape(tags, [self.batch_size, 1, 1, self.y_dim])
+            z = tf.concat([z, tags], 1)
+
+            h0 = tf.nn.relu(self.g_bn0(linear(z, self.gfc_dim, 'g_h0_lin'), train=False))
+            h0 = tf.concat([h0, tags], 1)
+
+            h1 = tf.nn.relu(self.g_bn1(
+                linear(h0, self.gf_dim*2*s_h4*s_w4, 'g_h1_lin'), train=False))
+            h1 = tf.reshape(h1, [self.batch_size, s_h4, s_w4, self.gf_dim * 2])
+            h1 = conv_cond_concat(h1, yb)
+
+            h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s_h2, s_w2, self.gf_dim * 2], name='g_h2'), train=False))
+            h2 = conv_cond_concat(h2, yb)
+
+            return tf.nn.sigmoid(deconv2d(h2, [self.batch_size, s_h, s_w, self.c_dim], name='g_h3'))
+
+
     def save(self, checkpoint_dir, step):
         model_name = "txt2pic.model"
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
@@ -185,13 +277,13 @@ class txt2pic():
         self.saver.save(self.sess,os.path.join(checkpoint_dir, model_name),global_step=step)
 
     def load(self, checkpoint_dir):
-        import re
         print(" [*] Reading checkpoints...")
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
+            import re
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
             self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
             counter = int(next(re.finditer("(\d+)(?!.*\d)",ckpt_name)).group(0))
@@ -210,7 +302,6 @@ if __name__ == '__main__':
                 model = txt2pic(batch_size=int(size))
                 model.train()
             except IndexError:
-                size = sys.argv[2]
                 model = txt2pic()
                 model.train()
         elif cmd == "test":
