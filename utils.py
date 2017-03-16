@@ -4,7 +4,6 @@ Some codes from https://github.com/Newmu/dcgan_code
 from __future__ import division
 import scipy.misc
 import numpy as np
-import fire
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
 
@@ -87,6 +86,3 @@ def make_gif(images, fname, duration=2, true_image=False):
 
     clip = mpy.VideoClip(make_frame, duration=duration)
     clip.write_gif(fname, fps = len(images) / duration)
-
-
-# fire.Fire()

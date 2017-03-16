@@ -15,7 +15,7 @@ from utils import *
 # Use a CGAN with layer_size y class labels for the y_dim and concat it to the inputs of the generator and discriminator
 
 class txt2pic():
-    def __init__(self, image_size=28, batch_size=64):
+    def __init__(self, image_size=108, batch_size=64):
 
         self.batch_size = batch_size
         print("batch_size: %d" % self.batch_size)
@@ -87,43 +87,57 @@ class txt2pic():
         self.saver = tf.train.Saver()
 
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        # data = glob(os.path.join("dataset", "*.png"))
-        data_dir = os.path.join("./data", "")
+        # data = glob(os.path.join("imgs", "*.jpg"))  # YOUR OWN DATASET
+        data = glob(os.path.join("birds", "*.jpg"))[:542]  #CUB BIRD DATASET
+        tags = np.zeros((543, self.y_dim), dtype=np.float32)
+        tags[:59, 0] = 1
+        tags[59:118, 1] = 1
+        tags[118:176, 2] = 1
+        tags[176:236, 3] = 1
+        tags[236:280, 4] = 1
+        tags[280:321, 5] = 1
+        tags[321:374, 6] = 1
+        tags[374:422, 7] = 1
+        tags[422:481, 8] = 1
+        tags[481:541, 9] = 1
 
-        fd = open(os.path.join(data_dir,'train-images-idx3-ubyte'))
-        loaded = np.fromfile(file=fd,dtype=np.uint8)
-        trX = loaded[16:].reshape((60000,28,28,1)).astype(np.float)
-
-        fd = open(os.path.join(data_dir,'train-labels-idx1-ubyte'))
-        loaded = np.fromfile(file=fd,dtype=np.uint8)
-        trY = loaded[8:].reshape((60000)).astype(np.float)
-
-        fd = open(os.path.join(data_dir,'t10k-images-idx3-ubyte'))
-        loaded = np.fromfile(file=fd,dtype=np.uint8)
-        teX = loaded[16:].reshape((10000,28,28,1)).astype(np.float)
-
-        fd = open(os.path.join(data_dir,'t10k-labels-idx1-ubyte'))
-        loaded = np.fromfile(file=fd,dtype=np.uint8)
-        teY = loaded[8:].reshape((10000)).astype(np.float)
-
-        trY = np.asarray(trY)
-        teY = np.asarray(teY)
-
-        X = np.concatenate((trX, teX), axis=0)
-        y = np.concatenate((trY, teY), axis=0).astype(np.int)
-
-        seed = 547
-        np.random.seed(seed)
-        np.random.shuffle(X)
-        np.random.seed(seed)
-        np.random.shuffle(y)
-
-        y_vec = np.zeros((len(y), self.y_dim), dtype=np.float)
-        for i, label in enumerate(y):
-          y_vec[i,y[i]] = 1.0
-
-        data = X/255.
-        tags = y_vec
+        # IF MNIST
+        # data_dir = os.path.join("./data", "")
+        #
+        # fd = open(os.path.join(data_dir,'train-images-idx3-ubyte'))
+        # loaded = np.fromfile(file=fd,dtype=np.uint8)
+        # trX = loaded[16:].reshape((60000,28,28,1)).astype(np.float)
+        #
+        # fd = open(os.path.join(data_dir,'train-labels-idx1-ubyte'))
+        # loaded = np.fromfile(file=fd,dtype=np.uint8)
+        # trY = loaded[8:].reshape((60000)).astype(np.float)
+        #
+        # fd = open(os.path.join(data_dir,'t10k-images-idx3-ubyte'))
+        # loaded = np.fromfile(file=fd,dtype=np.uint8)
+        # teX = loaded[16:].reshape((10000,28,28,1)).astype(np.float)
+        #
+        # fd = open(os.path.join(data_dir,'t10k-labels-idx1-ubyte'))
+        # loaded = np.fromfile(file=fd,dtype=np.uint8)
+        # teY = loaded[8:].reshape((10000)).astype(np.float)
+        #
+        # trY = np.asarray(trY)
+        # teY = np.asarray(teY)
+        #
+        # X = np.concatenate((trX, teX), axis=0)
+        # y = np.concatenate((trY, teY), axis=0).astype(np.int)
+        #
+        # seed = 547
+        # np.random.seed(seed)
+        # np.random.shuffle(X)
+        # np.random.seed(seed)
+        # np.random.shuffle(y)
+        #
+        # y_vec = np.zeros((len(y), self.y_dim), dtype=np.float)
+        # for i, label in enumerate(y):
+        #   y_vec[i,y[i]] = 1.0
+        #
+        # data = X/255.
+        # tags = y_vec
 
         if not os.path.exists("./samples"):
             os.makedirs("./samples")
@@ -135,32 +149,30 @@ class txt2pic():
         else:
             print(" [!] Load failed...")
 
-        # print data[0]
-        # base = np.array([
-        #         get_image(batch_file,
-        #             input_height=self.image_size,
-        #             input_width=self.image_size,
-        #             resize_height=self.output_size,
-        #             resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
-        base = data[0:self.batch_size]
-        save_images(base, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "samples/training_ex.png")
+        sample = np.array([
+                get_image(batch_file,
+                    input_height=self.image_size,
+                    input_width=self.image_size,
+                    resize_height=self.output_size,
+                    resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
+        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "samples/training_ex.png")
+        sample_inputs = np.array(sample).astype(np.float32)[:, :, :, :3]
+        sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
+        sample_tags = tags[0:self.batch_size]
 
         batch_idxs = len(data) // self.batch_size
-        print(batch_idxs)
         print("Training Now...")
         for epoch in xrange(10000):
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
-                # batch = [
-                #     get_image(batch_file,
-                #         input_height=self.image_size,
-                #         input_width=self.image_size,
-                #         resize_height=self.output_size,
-                #         resize_width=self.output_size) for batch_file in batch_files]
-                # batch_images = np.array(batch).astype(np.float32)
+                batch = [
+                    get_image(batch_file,
+                        input_height=self.image_size,
+                        input_width=self.image_size,
+                        resize_height=self.output_size,
+                        resize_width=self.output_size) for batch_file in batch_images]
+                batch_images = np.array(batch).astype(np.float32)
                 batch_tags = tags[idx*self.batch_size:(idx+1)*self.batch_size]
-                # batch_tags = np.zeros((self.batch_size , self.y_dim), dtype=np.float32)
-                # batch_tags[:,1] = 1  # need actual tags later
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # noise
 
                 _, errD = self.sess.run([self.d_optim, self.d_loss], feed_dict={self.inputs: batch_images, self.z: batch_z, self.tags: batch_tags})
@@ -176,20 +188,20 @@ class txt2pic():
 
                 counter += 1
                 print("Epoch: [%2d] [%4d/%4d], d_loss: %.8f, g_loss: %.8f" \
-                        % (epoch, idx, batch_idxs, errD, errG))
+                        % (epoch, idx+1, batch_idxs, errD, errG))
 
-                if np.mod(counter, 100) == 1:
+                if np.mod(counter, 10) == 1:
                     samples, d_loss, g_loss = self.sess.run(
                         [self.sampler, self.d_loss, self.g_loss],
                         feed_dict={
-                            self.z: batch_z,
-                            self.inputs: batch_images,
-                            self.tags: batch_tags
+                            self.z: sample_z,
+                            self.inputs: sample_inputs,
+                            self.tags: sample_tags
                         }
                     )
                     save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], './samples/train_{:02d}_{:04d}.png'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
-                if np.mod(counter, 500) == 2:
+                if np.mod(counter, 500) == 2 or np.mod(idx+5, batch_idxs) == 1:
                   self.save(self.checkpoint_dir, counter)
 
     def generator(self, z, tags):
