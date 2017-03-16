@@ -1,4 +1,4 @@
-# dcgan.text-to-illus
+# Generative Adversarial Label to Image Synthesis
 
 ```main.py``` is based off of a standard DCGAN approach with a conditional layer.
 
