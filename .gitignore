@@ -6,3 +6,5 @@ __pycache__/
 logs/
 *.pyc
 checkpoint/
+dist/
+dcgan.egg-info/

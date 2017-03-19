@@ -7,6 +7,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
 import math
+from google.cloud import storage
 from six.moves import xrange  # Compatability w/ Python3
 
 from ops import *
@@ -32,6 +33,9 @@ class txt2pic():
         self.dfc_dim = 1024
 
         self.c_dim = 3 # 1 for grayscale
+
+        self.client = storage.Client()
+        self.bucket = self.client.get_bucket('dcgan-161707-mlengine')
 
         # try out Elastic Nets
         # Declare the elastic net loss function
@@ -87,8 +91,9 @@ class txt2pic():
         self.saver = tf.train.Saver()
 
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        # data = glob(os.path.join("imgs", "*.jpg"))  # YOUR OWN DATASET
-        data = glob(os.path.join("birds", "*.jpg"))[:542]  #CUB BIRD DATASET
+        iterator = self.bucket.list_blobs(prefix='birds') #CUB BIRD DATASET -- download and put first 10 class birds into "/birds" in gcloud bucket
+        data = list(iterator)[1:543]
+        print(data[1].name)
         tags = np.zeros((543, self.y_dim), dtype=np.float32)
         tags[:59, 0] = 1
         tags[59:118, 1] = 1
@@ -139,8 +144,6 @@ class txt2pic():
         # data = X/255.
         # tags = y_vec
 
-        if not os.path.exists("./samples"):
-            os.makedirs("./samples")
         counter = 0
 
         if could_load:
@@ -150,7 +153,7 @@ class txt2pic():
             print(" [!] Load failed...")
 
         sample = np.array([
-                get_image(batch_file,
+                get_image(batch_file.name,
                     input_height=self.image_size,
                     input_width=self.image_size,
                     resize_height=self.output_size,
@@ -162,11 +165,11 @@ class txt2pic():
 
         batch_idxs = len(data) // self.batch_size
         print("Training Now...")
-        for epoch in xrange(10000):
+        for epoch in xrange(100):
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [
-                    get_image(batch_file,
+                    get_image(batch_file.name,
                         input_height=self.image_size,
                         input_width=self.image_size,
                         resize_height=self.output_size,
