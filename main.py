@@ -87,8 +87,8 @@ class txt2pic():
         self.saver = tf.train.Saver()
 
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        # data = glob(os.path.join("imgs", "*.jpg"))  # YOUR OWN DATASET
-        data = glob(os.path.join("birds", "*.jpg"))[:542]  #CUB BIRD DATASET
+        # data = glob(os.path.join("imgs", "*.jpg"))  # YOUR OWN DATASET create a folder "/imgs"
+        data = glob(os.path.join("birds", "*.jpg"))[:542]  #CUB BIRD DATASET -- download and put first 10 class birds into "/birds"
         tags = np.zeros((543, self.y_dim), dtype=np.float32)
         tags[:59, 0] = 1
         tags[59:118, 1] = 1
