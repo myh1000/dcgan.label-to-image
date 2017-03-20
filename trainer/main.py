@@ -129,7 +129,7 @@ class txt2pic():
 
         batch_idxs = len(data) // self.batch_size
         print("Training Now...")
-        for epoch in xrange(100):
+        for epoch in xrange(10000):  # Just make this arbitrarily big and cancel the job after a certain period of time
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [
@@ -258,7 +258,7 @@ class txt2pic():
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
         _checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
-        ckpt = tf.train.get_checkpoint_state(_checkpoint_dir) ## should probably be fine if its gs://
+        ckpt = tf.train.get_checkpoint_state(_checkpoint_dir) # A path with gs://
         if ckpt and ckpt.model_checkpoint_path:
             import re
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)

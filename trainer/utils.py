@@ -4,10 +4,7 @@ Some codes from https://github.com/Newmu/dcgan_code
 from __future__ import division
 import scipy.misc
 import numpy as np
-import urllib2
-import cStringIO
 from PIL import Image
-# import fire
 from google.cloud import storage
 import tempfile
 
@@ -60,8 +57,11 @@ def merge_gray(images, size):
 
 def imsave(images, size, path, is_grayscale=False):
     if (is_grayscale):
-        scipy.misc.toimage(merge_gray(images, size))
-        return scipy.misc.imsave(path, merge_gray(images, size))
+        blob = bucket.blob(path)
+        temp.seek(0,0)
+        scipy.misc.imsave(temp, merge_gray(images, size), "jpeg")
+        temp.seek(0,0)
+        return blob.upload_from_file(temp,content_type='image/jpeg')
     else:
         blob = bucket.blob(path)
         temp.seek(0,0)
@@ -76,7 +76,6 @@ def center_crop(x, crop_h, crop_w,
     h, w = x.shape[:2]
     j = int(round((h - crop_h)/2.))
     i = int(round((w - crop_w)/2.))
-    print(j,i)
     return scipy.misc.imresize(x[j:j+crop_h, i:i+crop_w], [resize_h, resize_w])
 
 def transform(image, input_height, input_width,
@@ -106,6 +105,8 @@ def make_gif(images, fname, duration=2, true_image=False):
             return ((x+1)/2*255).astype(np.uint8)
 
     clip = mpy.VideoClip(make_frame, duration=duration)
-    clip.write_gif(fname, fps = len(images) / duration)
-
-# fire.Fire()
+    blob = bucket.blob(fname)  # should be name.gif
+    temp.seek(0,0)
+    clip.write_gif(temp.name, fps = len(images) / duration)
+    temp.seek(0,0)
+    blob.upload_from_file(temp, content_type='image/gif')
