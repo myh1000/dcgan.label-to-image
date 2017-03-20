@@ -167,6 +167,7 @@ class txt2pic():
                     save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results/train_{:02d}_{:04d}.png'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
                 if np.mod(counter, 500) == 0:
+                    print("[Saving] %2d, %d" % (epoch, counter))
                     self.save(self.checkpoint_dir, counter)
 
     def generator(self, z, tags):
@@ -246,10 +247,12 @@ class txt2pic():
     def save(self, checkpoint_dir, step):
         model_name = "txt2pic.model"
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
-        checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
+        _checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
+        blob = bucket.blob(os.path.join("checkpoint", model_dir, "placeholder"))
+        blob.upload_from_string("placeholder")
 
         # Wow, does this take awhile when uploading to gcloud storage
-        self.saver.save(self.sess,os.path.join(checkpoint_dir, model_name),global_step=step)
+        self.saver.save(self.sess,os.path.join(_checkpoint_dir, model_name),global_step=step)
 
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoints...")
