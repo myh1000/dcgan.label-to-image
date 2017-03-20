@@ -8,6 +8,8 @@ logs/
 checkpoint/
 birds/
 imgs/
+dcgan.egg-info/
+dist/
 samples/
 .DS_Store
 gcloud.py
