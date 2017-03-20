@@ -57,7 +57,7 @@ class txt2pic():
         self.g_bn1 = batch_norm(name='g_bn1')
         self.g_bn2 = batch_norm(name='g_bn2')
 
-        self.checkpoint_dir = bucket_name+"/checkpoint"
+        self.checkpoint_dir = "gs://"+bucket_name+"/checkpoint"
         self.build_model()
 
     def build_model(self):
@@ -258,9 +258,9 @@ class txt2pic():
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoints...")
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
-        checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
+        _checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir) ## should probably be fine if its gs://
+        ckpt = tf.train.get_checkpoint_state(_checkpoint_dir) ## should probably be fine if its gs://
         if ckpt and ckpt.model_checkpoint_path:
             import re
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
@@ -281,17 +281,23 @@ if __name__ == '__main__':
                 model = txt2pic(bucket_name=sys.argv[2], batch_size=int(size))
                 model.train()
             except IndexError:
-                model = txt2pic(bucket_name=sys.argv[2])
-                model.train()
+                try:
+                    model = txt2pic(bucket_name=sys.argv[2])
+                    model.train()
+                except:
+                    print("Usage: python main.py [train/test, bucket_name, (optional) batch_size (train only), image_size (test only)]")
         elif cmd == "test":
             try:
                 size = sys.argv[3]
-                model = txt2pic(bucket_name=sys.argv[2], batch_size=1, mage_size=int(size))
+                model = txt2pic(bucket_name=sys.argv[2], batch_size=1, image_size=int(size))
                 model.test()
             except IndexError:
-                model = txt2pic(bucket_name=sys.argv[2])
-                model.test()
+                try:
+                    model = txt2pic(bucket_name=sys.argv[2])
+                    model.test()
+                except:
+                    print("Usage: python main.py [train/test, bucket_name, (optional) batch_size (train only), image_size (test only)]")
         else:
-            print("Usage: python main.py [train, test, (optional) img output size]")
+            print("Usage: python main.py [train/test, bucket_name, (optional) batch_size (train only), image_size (test only)]")
     else:
-        print("Usage: python main.py [train + (optional) batch_size, test + (optional) img output size]")
+        print("Usage: python main.py [train/test, bucket_name, (optional) batch_size (train only), image_size (test only)]")
