@@ -5,6 +5,7 @@ import sys
 from glob import glob
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+import scipy.misc
 import numpy as np
 import math
 from google.cloud import storage
@@ -16,7 +17,7 @@ from utils import *
 # Use a CGAN with layer_size y class labels for the y_dim and concat it to the inputs of the generator and discriminator
 
 class txt2pic():
-    def __init__(self, image_size=108, batch_size=64):
+    def __init__(self, bucket_name, image_size=108, batch_size=64):
 
         self.batch_size = batch_size
         print("batch_size: %d" % self.batch_size)
@@ -35,7 +36,8 @@ class txt2pic():
         self.c_dim = 3 # 1 for grayscale
 
         self.client = storage.Client()
-        self.bucket = self.client.get_bucket('dcgan-161707-mlengine')
+        self.bucket = self.client.get_bucket(bucket_name)
+        create_bucket(bucket_name)
 
         # try out Elastic Nets
         # Declare the elastic net loss function
@@ -55,7 +57,7 @@ class txt2pic():
         self.g_bn1 = batch_norm(name='g_bn1')
         self.g_bn2 = batch_norm(name='g_bn2')
 
-        self.checkpoint_dir = "./checkpoint"
+        self.checkpoint_dir = bucket_name+"/checkpoint"
         self.build_model()
 
     def build_model(self):
@@ -93,7 +95,7 @@ class txt2pic():
         could_load, checkpoint_counter = self.load(self.checkpoint_dir)
         iterator = self.bucket.list_blobs(prefix='birds') #CUB BIRD DATASET -- download and put first 10 class birds into "/birds" in gcloud bucket
         data = list(iterator)[1:543]
-        print(data[1].name)
+        print(data[1])
         tags = np.zeros((543, self.y_dim), dtype=np.float32)
         tags[:59, 0] = 1
         tags[59:118, 1] = 1
@@ -106,44 +108,6 @@ class txt2pic():
         tags[422:481, 8] = 1
         tags[481:541, 9] = 1
 
-        # IF MNIST
-        # data_dir = os.path.join("./data", "")
-        #
-        # fd = open(os.path.join(data_dir,'train-images-idx3-ubyte'))
-        # loaded = np.fromfile(file=fd,dtype=np.uint8)
-        # trX = loaded[16:].reshape((60000,28,28,1)).astype(np.float)
-        #
-        # fd = open(os.path.join(data_dir,'train-labels-idx1-ubyte'))
-        # loaded = np.fromfile(file=fd,dtype=np.uint8)
-        # trY = loaded[8:].reshape((60000)).astype(np.float)
-        #
-        # fd = open(os.path.join(data_dir,'t10k-images-idx3-ubyte'))
-        # loaded = np.fromfile(file=fd,dtype=np.uint8)
-        # teX = loaded[16:].reshape((10000,28,28,1)).astype(np.float)
-        #
-        # fd = open(os.path.join(data_dir,'t10k-labels-idx1-ubyte'))
-        # loaded = np.fromfile(file=fd,dtype=np.uint8)
-        # teY = loaded[8:].reshape((10000)).astype(np.float)
-        #
-        # trY = np.asarray(trY)
-        # teY = np.asarray(teY)
-        #
-        # X = np.concatenate((trX, teX), axis=0)
-        # y = np.concatenate((trY, teY), axis=0).astype(np.int)
-        #
-        # seed = 547
-        # np.random.seed(seed)
-        # np.random.shuffle(X)
-        # np.random.seed(seed)
-        # np.random.shuffle(y)
-        #
-        # y_vec = np.zeros((len(y), self.y_dim), dtype=np.float)
-        # for i, label in enumerate(y):
-        #   y_vec[i,y[i]] = 1.0
-        #
-        # data = X/255.
-        # tags = y_vec
-
         counter = 0
 
         if could_load:
@@ -153,12 +117,12 @@ class txt2pic():
             print(" [!] Load failed...")
 
         sample = np.array([
-                get_image(batch_file.name,
+                get_image(batch_file,
                     input_height=self.image_size,
                     input_width=self.image_size,
                     resize_height=self.output_size,
                     resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
-        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "samples/training_ex.png")
+        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "results/training_ex.png")
         sample_inputs = np.array(sample).astype(np.float32)[:, :, :, :3]
         sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
         sample_tags = tags[0:self.batch_size]
@@ -169,7 +133,7 @@ class txt2pic():
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [
-                    get_image(batch_file.name,
+                    get_image(batch_file,
                         input_height=self.image_size,
                         input_width=self.image_size,
                         resize_height=self.output_size,
@@ -202,10 +166,10 @@ class txt2pic():
                             self.tags: sample_tags
                         }
                     )
-                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], './samples/train_{:02d}_{:04d}.png'.format(epoch, idx))
+                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results/train_{:02d}_{:04d}.png'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
-                if np.mod(counter, 500) == 2 or np.mod(idx+5, batch_idxs) == 1:
-                  self.save(self.checkpoint_dir, counter)
+                # if np.mod(counter, 500) == 2 or np.mod(idx+5, batch_idxs) == 1:
+                #   self.save(self.checkpoint_dir, counter)
 
     def generator(self, z, tags):
         with tf.variable_scope("generator") as scope:
@@ -296,7 +260,7 @@ class txt2pic():
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir) ## should probably be fine if its gs://
         if ckpt and ckpt.model_checkpoint_path:
             import re
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
@@ -313,20 +277,19 @@ if __name__ == '__main__':
         cmd = sys.argv[1]
         if cmd == "train":
             try:
-                size = sys.argv[2]
-                model = txt2pic(batch_size=int(size))
+                size = sys.argv[3]
+                model = txt2pic(bucket_name=sys.argv[2], batch_size=int(size))
                 model.train()
             except IndexError:
-                model = txt2pic()
+                model = txt2pic(bucket_name=sys.argv[2])
                 model.train()
         elif cmd == "test":
             try:
-                size = sys.argv[2]
-                model = txt2pic(image_size=int(size))
+                size = sys.argv[3]
+                model = txt2pic(bucket_name=sys.argv[2], batch_size=1, mage_size=int(size))
                 model.test()
             except IndexError:
-                size = sys.argv[2]
-                model = txt2pic()
+                model = txt2pic(bucket_name=sys.argv[2])
                 model.test()
         else:
             print("Usage: python main.py [train, test, (optional) img output size]")

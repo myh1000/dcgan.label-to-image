@@ -9,3 +9,5 @@ checkpoint/
 dist/
 dcgan.egg-info/
 .DS_Store
+# for testing/playground
+gcloud.py

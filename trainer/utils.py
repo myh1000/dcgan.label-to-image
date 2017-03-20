@@ -7,9 +7,19 @@ import numpy as np
 import urllib2
 import cStringIO
 from PIL import Image
-import fire
+# import fire
+from google.cloud import storage
+import tempfile
+
+temp = tempfile.NamedTemporaryFile()
+client = storage.Client()
+bucket = None
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
+
+def create_bucket(bucket_name):
+    global bucket
+    bucket = client.get_bucket(bucket_name)
 
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,
@@ -22,11 +32,13 @@ def save_images(images, size, image_path, is_grayscale=False):
 
 def imread(path, is_grayscale=False):
     if (is_grayscale):
-        file = cStringIO.StringIO(urllib2.urlopen(path).read())
-        return scipy.misc.imread(file, flatten = True).astype('uint8')
+        temp.seek(0,0)
+        path.download_to_file(temp)
+        return scipy.misc.imread(temp, flatten = True).astype('uint8')
     else:
-        file = cStringIO.StringIO(urllib2.urlopen("https://storage.googleapis.com/dcgan-161707-mlengine/"+path).read())
-        return scipy.misc.imread(file).astype('uint8')
+        temp.seek(0,0)
+        path.download_to_file(temp)
+        return scipy.misc.imread(temp).astype('uint8')
 
 def merge(images, size):
     h, w = images.shape[1], images.shape[2]
@@ -48,26 +60,29 @@ def merge_gray(images, size):
 
 def imsave(images, size, path, is_grayscale=False):
     if (is_grayscale):
+        scipy.misc.toimage(merge_gray(images, size))
         return scipy.misc.imsave(path, merge_gray(images, size))
     else:
-        return scipy.misc.imsave(path, merge(images, size))
+        blob = bucket.blob(path)
+        temp.seek(0,0)
+        scipy.misc.imsave(temp, merge(images, size), "jpeg")
+        temp.seek(0,0)
+        return blob.upload_from_file(temp,content_type='image/jpeg')
 
 def center_crop(x, crop_h, crop_w,
                 resize_h=64, resize_w=64):
     if crop_w is None:
         crop_w = crop_h
-        h, w = x.shape[:2]
-        j = int(round((h - crop_h)/2.))
-        i = int(round((w - crop_w)/2.))
-    return scipy.misc.imresize(
-        x[j:j+crop_h, i:i+crop_w], [resize_h, resize_w])
+    h, w = x.shape[:2]
+    j = int(round((h - crop_h)/2.))
+    i = int(round((w - crop_w)/2.))
+    print(j,i)
+    return scipy.misc.imresize(x[j:j+crop_h, i:i+crop_w], [resize_h, resize_w])
 
 def transform(image, input_height, input_width,
               resize_height=64, resize_width=64, is_crop=True):
     if is_crop:
-        cropped_image = center_crop(
-          image, input_height, input_width,
-          resize_height, resize_width)
+        cropped_image = center_crop(image, input_height, input_width, resize_h=resize_height, resize_w=resize_width)
     else:
         cropped_image = scipy.misc.imresize(image, [resize_height, resize_width])
     return np.array(cropped_image)/127.5 - 1.
