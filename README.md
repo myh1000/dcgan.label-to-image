@@ -6,6 +6,24 @@
 
 To run this code on google cloud compute, go to the [gcloud branch](https://github.com/myh1000/dcgan.label-to-image/tree/gcloud).
 
+## Setup
+
+### Prerequisites
+- Python
+- numpy
+- [TensorFlow](https://www.tensorflow.org/install/) 1.0+
+
+### Training/Testing
+
+```
+python main.py train [optional batch_size]
+```
+
+```
+python main.py test [optional image_output_size]
+```
+
+
 ## Acknowledgments
 
 Code borrows heavily from [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow) for ```main.py``` and [pix2pix-tensorflow](https://github.com/yenchenlin/pix2pix-tensorflow) for ```main-p2p.py```
