@@ -14,9 +14,10 @@ bucket = None
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
 
-def create_bucket(bucket_name):
+def get_bucket(bucket_name):
     global bucket
     bucket = client.get_bucket(bucket_name)
+    return bucket
 
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,

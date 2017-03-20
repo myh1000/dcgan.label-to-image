@@ -35,9 +35,7 @@ class txt2pic():
 
         self.c_dim = 3 # 1 for grayscale
 
-        self.client = storage.Client()
-        self.bucket = self.client.get_bucket(bucket_name.replace("gs://",""))
-        create_bucket(bucket_name.replace("gs://",""))
+        self.bucket = get_bucket(bucket_name.replace("gs://",""))
 
         # try out Elastic Nets
         # Declare the elastic net loss function
