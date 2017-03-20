@@ -248,7 +248,7 @@ class txt2pic():
         model_name = "txt2pic.model"
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
         _checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
-        blob = bucket.blob(os.path.join("checkpoint", model_dir, "placeholder"))
+        blob = self.bucket.blob(os.path.join("checkpoint", model_dir, "placeholder"))
         blob.upload_from_string("placeholder")
 
         # Wow, does this take awhile when uploading to gcloud storage
