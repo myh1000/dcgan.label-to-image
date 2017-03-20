@@ -9,3 +9,5 @@ checkpoint/
 birds/
 imgs/
 samples/
+.DS_Store
+gcloud.py
