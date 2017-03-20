@@ -36,8 +36,8 @@ class txt2pic():
         self.c_dim = 3 # 1 for grayscale
 
         self.client = storage.Client()
-        self.bucket = self.client.get_bucket(bucket_name)
-        create_bucket(bucket_name)
+        self.bucket = self.client.get_bucket(bucket_name.replace("gs://",""))
+        create_bucket(bucket_name.replace("gs://",""))
 
         # try out Elastic Nets
         # Declare the elastic net loss function
@@ -57,7 +57,7 @@ class txt2pic():
         self.g_bn1 = batch_norm(name='g_bn1')
         self.g_bn2 = batch_norm(name='g_bn2')
 
-        self.checkpoint_dir = "gs://"+bucket_name+"/checkpoint"
+        self.checkpoint_dir = bucket_name+"/checkpoint"
         self.build_model()
 
     def build_model(self):
@@ -259,11 +259,12 @@ class txt2pic():
         _checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
         ckpt = tf.train.get_checkpoint_state(_checkpoint_dir) # A path with gs://
+        latest_checkpoint = tf.train.latest_checkpoint(_checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             import re
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
             counter = int(next(re.finditer("(\d+)(?!.*\d)",ckpt_name)).group(0))
+            self.saver.restore(self.sess, latest_checkpoint)
             print(" [*] Success to read {}".format(ckpt_name))
             return True, counter
         else:
