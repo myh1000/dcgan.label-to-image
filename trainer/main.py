@@ -147,6 +147,7 @@ class txt2pic():
 
                 # Maybe run g_optim twice -- look at carpedm20's code
                 _, errG = self.sess.run([self.g_optim, self.g_loss], feed_dict={self.z: batch_z, self.tags: batch_tags})
+                _, errG = self.sess.run([self.g_optim, self.g_loss], feed_dict={self.z: batch_z, self.tags: batch_tags})
                 # errD_fake = self.d_loss_fake.eval({self.real_data: batch_images})
                 # errD_real = self.d_loss_real.eval({self.real_data: batch_images})
                 # errG = self.g_loss.eval({self.real_data: batch_images})
