@@ -4,7 +4,38 @@
 
 **Not implemented for gcloud!** ```main-p2p.py``` attempts to concat the layers at the start and and keep the old DCGAN format.
 
-To run this code on your own machine, go to the [master branch](https://github.com/myh1000/dcgan.label-to-image/tree/master).
+To run this code on your own machine, go to the [master ranch](https://github.com/myh1000/dcgan.label-to-image/tree/master).
+
+## Setup
+
+### Prerequisites
+ * Install [Cloud SDK](https://cloud.google.com/sdk/)
+ * Install [gcloud](https://cloud.google.com/sdk/gcloud/)
+ * Google Cloud setup for ML Engine
+ 
+### Training
+```
+gcloud ml-engine jobs submit training $JOB_NAME \
+                                    --runtime-version 1.0 \
+                                    --job-dir $CLOUD_STORAGE_BUCKET_NAME  \
+                                    --module-name trainer.main \
+                                    --package-path trainer/ \
+                                    --region us-east1 \
+                                    -- \
+                                    train $CLOUD_STORAGE_BUCKET_NAME [optional batch_size]
+```
+
+### Testing
+```
+gcloud ml-engine jobs submit training $JOB_NAME \
+                                    --runtime-version 1.0 \
+                                    --job-dir $CLOUD_STORAGE_BUCKET_NAME  \
+                                    --module-name trainer.main \
+                                    --package-path trainer/ \
+                                    --region us-east1 \
+                                    -- \
+                                    test $CLOUD_STORAGE_BUCKET_NAME [optional image_output_size]
+```
 
 ## Acknowledgments
 
