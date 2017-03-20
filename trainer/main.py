@@ -157,7 +157,7 @@ class txt2pic():
                 print("Epoch: [%2d] [%4d/%4d], d_loss: %.8f, g_loss: %.8f" \
                         % (epoch, idx+1, batch_idxs, errD, errG))
 
-                if np.mod(counter, 10) == 1:
+                if np.mod(counter, 100) == 1:
                     samples, d_loss, g_loss = self.sess.run(
                         [self.sampler, self.d_loss, self.g_loss],
                         feed_dict={
@@ -168,8 +168,8 @@ class txt2pic():
                     )
                     save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results/train_{:02d}_{:04d}.png'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
-                # if np.mod(counter, 500) == 2 or np.mod(idx+5, batch_idxs) == 1:
-                #   self.save(self.checkpoint_dir, counter)
+                if np.mod(counter, 500) == 0:
+                    self.save(self.checkpoint_dir, counter)
 
     def generator(self, z, tags):
         with tf.variable_scope("generator") as scope:
@@ -250,9 +250,7 @@ class txt2pic():
         model_dir = "%s_%s" % (self.batch_size, self.output_size)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-
+        # Wow, does this take awhile when uploading to gcloud storage
         self.saver.save(self.sess,os.path.join(checkpoint_dir, model_name),global_step=step)
 
     def load(self, checkpoint_dir):
