@@ -2,7 +2,7 @@
 
 ```main.py``` is based off of a standard DCGAN approach with a conditional layer.
 
-```main-p2p.py``` attempts to concat the layers at the start and and keep the old DCGAN format.
+**Not implemented for gcloud!** ```main-p2p.py``` attempts to concat the layers at the start and and keep the old DCGAN format.
 
 To run this code on your own machine, go to the [master branch](https://github.com/myh1000/dcgan.label-to-image/tree/master).
 
