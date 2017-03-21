@@ -72,8 +72,7 @@ def process_img(img_path):
     if im is (None or 0):
         print("Failed to process: " + img_path)
         return 0
-    # im.save(new_img_path, 'JPEG')
-    im.save(img_path, 'JPEG')
+    im.save(new_img_path, 'JPEG')
 
 def try_process_img(img_path):
     try:
