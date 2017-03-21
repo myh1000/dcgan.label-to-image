@@ -58,21 +58,11 @@ def process_img(img_path):
     The face images are stored in {${pwd} + faces}
     """
     tmp = img_path.split('/')
-    cls_name,img_name = tmp[len(tmp)-2], tmp[len(tmp)-1]
-    new_dir_path = os.path.join('faces',cls_name)
-    if not os.path.exists(new_dir_path):
-        try:
-            os.makedirs(new_dir_path)
-        except OSError as err:
-            print("OS error: {0}".format(err))
-
-    new_img_path = os.path.join(new_dir_path, img_name)
     im = load_detect(img_path)
     # no faces in this image
     if im is (None or 0):
         print("Failed to process: " + img_path)
         return 0
-    # im.save(new_img_path, 'JPEG')
     im.save(img_path, 'JPEG')
 
 def try_process_img(img_path):
