@@ -19,8 +19,10 @@ def run(tag_classes, start_count):
     maxsize = 512
 
     # add glasses + hair color / combos
-    #                     1            2            3
-    # tag_classes = ["blue_hair", "red_hair", "blonde_hair"]
+    #                     0            1            2              3
+    # tag_classes = ["blue_hair", "red_hair", "blonde_hair", "black_hair"]
+    # ENDS UP MAKING ~1000 IMAGES PER CLASS, CHANGE XRANGE FOR MORE IMAGES
+
     imgs = []
     tags = []
     tagname = []
