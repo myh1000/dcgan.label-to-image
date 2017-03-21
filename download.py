@@ -9,17 +9,17 @@ from google.cloud import storage
 import tempfile
 from preprocess import *
 
-def run(tag_classes):
+def run(tag_classes, start_count):
 
     temp = tempfile.NamedTemporaryFile()
     client = storage.Client()
     bucket = client.get_bucket("dcgan-161707-mlengine")
 
-    count = 0
+    count = int(start_count)
     maxsize = 512
 
     # add glasses + hair color / combos
-
+    #                     1            2            3
     # tag_classes = ["blue_hair", "red_hair", "blonde_hair"]
     imgs = []
     tags = []
@@ -49,13 +49,7 @@ def run(tag_classes):
                         tags.append(idx)
                         tagname.append(tag)
 
-            temp.seek(0,0)
-            save = np.stack((imgs, tags, tagname))
-            np.save(temp, save)
-            temp.seek(0,0)
-            bucket.blob("data"+tag+".npy").upload_from_file(temp)
-
-
 if __name__ == '__main__':
     if len(sys.argv) >= 2:
-        run(eval(sys.argv[1]))
+        run(eval(sys.argv[1]), sys.argv[2])
+    # py download.py '["blue_hair"]' 0
