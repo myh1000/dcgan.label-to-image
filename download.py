@@ -13,7 +13,7 @@ def run(tag_classes):
 
     temp = tempfile.NamedTemporaryFile()
     client = storage.Client()
-    bucket = client.get_bucket("dcgan-161707-mlengine")
+    bucket = client.get_bucket("bucket_name_here")
 
     count = 0
     maxsize = 512
