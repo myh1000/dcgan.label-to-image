@@ -20,7 +20,7 @@ def run(tag_classes, start_count):
         os.makedirs(tag_classes[0])
     temp = tempfile.NamedTemporaryFile(dir=tag_classes[0])
     client = storage.Client()
-    bucket = client.get_bucket("dcgan-161707-mlengine")
+    bucket = client.get_bucket("bucket_name_here")
 
     count = int(start_count)
     fail = 0
