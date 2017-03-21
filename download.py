@@ -1,144 +1,61 @@
-"""
-Modification of https://github.com/stanfordnlp/treelstm/blob/master/scripts/download.py
-
-Downloads the following:
-- Celeb-A dataset
-- LSUN dataset
-- MNIST dataset
-"""
-
-from __future__ import print_function
-import os
-import sys
-import gzip
+import urllib2
+import urllib
 import json
-import shutil
-import zipfile
-import argparse
-import subprocess
-from six.moves import urllib
+import numpy as np
+import cv2
+import untangle
+import scipy.misc
+from google.cloud import storage
+import tempfile
+from preprocess import *
 
-parser = argparse.ArgumentParser(description='Download dataset for DCGAN.')
-parser.add_argument('datasets', metavar='N', type=str, nargs='+', choices=['celebA', 'lsun', 'mnist'],
-           help='name of dataset to download [celebA, lsun, mnist]')
+def run(tag_classes):
 
-def download(url, dirpath):
-  filename = url.split('/')[-1]
-  filepath = os.path.join(dirpath, filename)
-  u = urllib.request.urlopen(url)
-  f = open(filepath, 'wb')
-  filesize = int(u.headers["Content-Length"])
-  print("Downloading: %s Bytes: %s" % (filename, filesize))
+    temp = tempfile.NamedTemporaryFile()
+    client = storage.Client()
+    bucket = client.get_bucket("dcgan-161707-mlengine")
 
-  downloaded = 0
-  block_sz = 8192
-  status_width = 70
-  while True:
-    buf = u.read(block_sz)
-    if not buf:
-      print('')
-      break
-    else:
-      print('', end='\r')
-    downloaded += len(buf)
-    f.write(buf)
-    status = (("[%-" + str(status_width + 1) + "s] %3.2f%%") %
-      ('=' * int(float(downloaded) / filesize * status_width) + '>', downloaded * 100. / filesize))
-    print(status, end='')
-    sys.stdout.flush()
-  f.close()
-  return filepath
+    count = 0
+    maxsize = 512
 
-def unzip(filepath):
-  print("Extracting: " + filepath)
-  dirpath = os.path.dirname(filepath)
-  with zipfile.ZipFile(filepath) as zf:
-    zf.extractall(dirpath)
-  os.remove(filepath)
+    # add glasses + hair color / combos
 
-def download_celeb_a(dirpath):
-  data_dir = 'celebA'
-  if os.path.exists(os.path.join(dirpath, data_dir)):
-    print('Found Celeb-A - skip')
-    return
-  url = 'https://www.dropbox.com/sh/8oqt9vytwxb3s4r/AADIKlz8PR9zr6Y20qbkunrba/Img/img_align_celeba.zip?dl=1&pv=1'
-  filepath = download(url, dirpath)
-  zip_dir = ''
-  with zipfile.ZipFile(filepath) as zf:
-    zip_dir = zf.namelist()[0]
-    zf.extractall(dirpath)
-  os.remove(filepath)
-  os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, data_dir))
+    # tag_classes = ["blue_hair", "red_hair", "blonde_hair"]
+    imgs = []
+    tags = []
+    tagname = []
 
-def _list_categories(tag):
-  url = 'http://lsun.cs.princeton.edu/htbin/list.cgi?tag=' + tag
-  f = urllib.request.urlopen(url)
-  return json.loads(f.read())
+    for idx, tag in enumerate(tag_classes):
+        print("Now downloading... " + tag)
+        for i in xrange(10):
+            stringreturn = urllib2.urlopen("http://safebooru.org/index.php?page=dapi&s=post&q=index&tags=1girl+"+tag+"&pid="+str(i+20)).read()
+            xmlreturn = untangle.parse(stringreturn)
+            for post in xmlreturn.posts.post:
+                imgurl = "http:" + post["sample_url"]
+                print imgurl
+                if ("png" in imgurl) or ("jpg" in imgurl):
+                    resp = urllib.urlopen(imgurl)
+                    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+                    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
-def _download_lsun(out_dir, category, set_name, tag):
-  url = 'http://lsun.cs.princeton.edu/htbin/download.cgi?tag={tag}' \
-      '&category={category}&set={set_name}'.format(**locals())
-  print(url)
-  if set_name == 'test':
-    out_name = 'test_lmdb.zip'
-  else:
-    out_name = '{category}_{set_name}_lmdb.zip'.format(**locals())
-  out_path = os.path.join(out_dir, out_name)
-  cmd = ['curl', url, '-o', out_path]
-  print('Downloading', category, set_name, 'set')
-  subprocess.call(cmd)
+                    count += 1
+                    temp.seek(0,0)
+                    scipy.misc.imsave(temp,image, "jpeg")
+                    blob = bucket.blob("imgs/"+str(count)+".jpg")
+                    temp.seek(0,0)
+                    if process_img(temp.name) != 0:
+                        blob.upload_from_file(temp,content_type='image/jpeg')
+                        imgs.append("imgs/"+str(count)+".jpg")
+                        tags.append(idx)
+                        tagname.append(tag)
 
-def download_lsun(dirpath):
-  data_dir = os.path.join(dirpath, 'lsun')
-  if os.path.exists(data_dir):
-    print('Found LSUN - skip')
-    return
-  else:
-    os.mkdir(data_dir)
+            temp.seek(0,0)
+            save = np.stack((imgs, tags, tagname))
+            np.save(temp, save)
+            temp.seek(0,0)
+            bucket.blob("data"+tag+".npy").upload_from_file(temp)
 
-  tag = 'latest'
-  #categories = _list_categories(tag)
-  categories = ['bedroom']
-
-  for category in categories:
-    _download_lsun(data_dir, category, 'train', tag)
-    _download_lsun(data_dir, category, 'val', tag)
-  _download_lsun(data_dir, '', 'test', tag)
-
-def download_mnist(dirpath):
-  data_dir = os.path.join(dirpath, 'mnist')
-  if os.path.exists(data_dir):
-    print('Found MNIST - skip')
-    return
-  else:
-    os.mkdir(data_dir)
-  url_base = 'http://yann.lecun.com/exdb/mnist/'
-  file_names = ['train-images-idx3-ubyte.gz',
-                'train-labels-idx1-ubyte.gz',
-                't10k-images-idx3-ubyte.gz',
-                't10k-labels-idx1-ubyte.gz']
-  for file_name in file_names:
-    url = (url_base+file_name).format(**locals())
-    print(url)
-    out_path = os.path.join(data_dir,file_name)
-    cmd = ['curl', url, '-o', out_path]
-    print('Downloading ', file_name)
-    subprocess.call(cmd)
-    cmd = ['gzip', '-d', out_path]
-    print('Decompressing ', file_name)
-    subprocess.call(cmd)
-
-def prepare_data_dir(path = './data'):
-  if not os.path.exists(path):
-    os.mkdir(path)
 
 if __name__ == '__main__':
-  args = parser.parse_args()
-  prepare_data_dir()
-
-  if 'celebA' in args.datasets:
-    download_celeb_a('./data')
-  if 'lsun' in args.datasets:
-    download_lsun('./data')
-  if 'mnist' in args.datasets:
-    download_mnist('./data')
+    if len(sys.argv) >= 2:
+        run(eval(sys.argv[1]))
