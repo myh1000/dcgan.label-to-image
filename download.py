@@ -5,17 +5,13 @@ import numpy as np
 import cv2
 import untangle
 import scipy.misc
-from google.cloud import storage
 import tempfile
 from preprocess import *
 
 def run(tag_classes):
 
-    temp = tempfile.NamedTemporaryFile()
-    client = storage.Client()
-    bucket = client.get_bucket("bucket_name_here")
-
     count = 0
+    fail = 0
     maxsize = 512
 
     # add glasses + hair color / combos
@@ -38,23 +34,15 @@ def run(tag_classes):
                     image = np.asarray(bytearray(resp.read()), dtype="uint8")
                     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
-                    count += 1
-                    temp.seek(0,0)
-                    scipy.misc.imsave(temp,image, "jpeg")
-                    blob = bucket.blob("imgs/"+str(count)+".jpg")
-                    temp.seek(0,0)
-                    if process_img(temp.name) != 0:
-                        blob.upload_from_file(temp,content_type='image/jpeg')
+                    scipy.misc.imsave("imgs/"+str(count)+".jpg",image[...,::-1], "jpeg")
+                    if process_img("imgs/"+str(count)+".jpg") != 0:
                         imgs.append("imgs/"+str(count)+".jpg")
                         tags.append(idx)
                         tagname.append(tag)
-
-            temp.seek(0,0)
-            save = np.stack((imgs, tags, tagname))
-            np.save(temp, save)
-            temp.seek(0,0)
-            bucket.blob("data"+tag+".npy").upload_from_file(temp)
-
+                        count += 1 # otherwise overwrite the old bad file in the next loop
+                    else:
+                        fail += 1
+    print("Done: %d failed" % fail)
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2:
