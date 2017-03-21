@@ -21,6 +21,7 @@ gcloud ml-engine jobs submit training $JOB_NAME \
                                     --module-name trainer.main \
                                     --package-path trainer/ \
                                     --region us-east1 \
+                                    --scale-tier BASIC_GPU \
                                     -- \
                                     train $CLOUD_STORAGE_BUCKET_NAME [optional batch_size]
 ```
@@ -33,6 +34,7 @@ gcloud ml-engine jobs submit training $JOB_NAME \
                                     --module-name trainer.main \
                                     --package-path trainer/ \
                                     --region us-east1 \
+                                    --scale-tier BASIC_GPU \
                                     -- \
                                     test $CLOUD_STORAGE_BUCKET_NAME [optional image_output_size]
 ```
