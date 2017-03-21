@@ -4,41 +4,58 @@ import json
 import numpy as np
 import cv2
 import untangle
+import scipy.misc
+from google.cloud import storage
+import tempfile
+from preprocess import *
 
-maxsize = 512
+def run(tag_classes):
 
-# for tag in tags:
+    temp = tempfile.NamedTemporaryFile()
+    client = storage.Client()
+    bucket = client.get_bucket("dcgan-161707-mlengine")
 
-count = 0
+    count = 0
+    maxsize = 512
 
-for i in xrange(10000):
-    stringreturn = urllib2.urlopen("http://safebooru.org/index.php?page=dapi&s=post&q=index&tags=1girl%20solo&pid="+str(i+3000)).read()
-    xmlreturn = untangle.parse(stringreturn)
-    for post in xmlreturn.posts.post:
-        imgurl = "http:" + post["sample_url"]
-        print imgurl
-        if ("png" in imgurl) or ("jpg" in imgurl):
+    # add glasses + hair color / combos
 
-            resp = urllib.urlopen(imgurl)
-            image = np.asarray(bytearray(resp.read()), dtype="uint8")
-            image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-            height, width = image.shape[:2]
-            if height > width:
-                scalefactor = (maxsize*1.0) / width
-                res = cv2.resize(image,(int(width * scalefactor), int(height*scalefactor)), interpolation = cv2.INTER_CUBIC)
-                cropped = res[0:maxsize,0:maxsize]
-            if width > height:
-                scalefactor = (maxsize*1.0) / height
-                res = cv2.resize(image,(int(width * scalefactor), int(height*scalefactor)), interpolation = cv2.INTER_CUBIC)
-                center_x = int(round(width*scalefactor*0.5))
-                cropped = res[0:maxsize,center_x - maxsize/2:center_x + maxsize/2]
+    # tag_classes = ["blue_hair", "red_hair", "blonde_hair"]
+    imgs = []
+    tags = []
+    tagname = []
 
-            # img_edge = cv2.adaptiveThreshold(cropped, 255,
-            #                                  cv2.ADAPTIVE_THRESH_MEAN_C,
-            #                                  cv2.THRESH_BINARY,
-            #                                  blockSize=9,
-            #                                  C=2)
+    for idx, tag in enumerate(tag_classes):
+        print("Now downloading... " + tag)
+        for i in xrange(10):
+            stringreturn = urllib2.urlopen("http://safebooru.org/index.php?page=dapi&s=post&q=index&tags=1girl+"+tag+"&pid="+str(i+20)).read()
+            xmlreturn = untangle.parse(stringreturn)
+            for post in xmlreturn.posts.post:
+                imgurl = "http:" + post["sample_url"]
+                print imgurl
+                if ("png" in imgurl) or ("jpg" in imgurl):
+                    resp = urllib.urlopen(imgurl)
+                    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+                    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
-            count += 1
-            cv2.imwrite("imgs/"+str(count)+".jpg",cropped)
-            # cv2.imwrite("imgs/"+str(post["id"])+"-edge.jpg",img_edge)
+                    count += 1
+                    temp.seek(0,0)
+                    scipy.misc.imsave(temp,image, "jpeg")
+                    blob = bucket.blob("imgs/"+str(count)+".jpg")
+                    temp.seek(0,0)
+                    if process_img(temp.name) != 0:
+                        blob.upload_from_file(temp,content_type='image/jpeg')
+                        imgs.append("imgs/"+str(count)+".jpg")
+                        tags.append(idx)
+                        tagname.append(tag)
+
+            temp.seek(0,0)
+            save = np.stack((imgs, tags, tagname))
+            np.save(temp, save)
+            temp.seek(0,0)
+            bucket.blob("data"+tag+".npy").upload_from_file(temp)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) >= 2:
+        run(eval(sys.argv[1]))
