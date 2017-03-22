@@ -100,7 +100,7 @@ class txt2pic():
         tags[374:422, 7] = 1
         tags[422:481, 8] = 1
         tags[481:541, 9] = 1
-        p = numpy.random.permutation(543)
+        p = np.random.permutation(543)
         data = data[p]
         tags = tags[p]
 
