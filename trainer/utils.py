@@ -5,6 +5,7 @@ from __future__ import division
 import scipy.misc
 import numpy as np
 from PIL import Image
+import tensorflow as tf
 from google.cloud import storage
 import tempfile
 
@@ -22,8 +23,7 @@ def get_bucket(bucket_name):
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,
               is_crop=False, is_grayscale=False):
-    return transform(imread(image_path, is_grayscale), input_height, input_width,
-                   resize_height, resize_width, is_crop)
+    return tf.Session().run(tf.image.random_flip_left_right(transform(imread(image_path, is_grayscale), input_height, input_width, resize_height, resize_width, is_crop)))
 
 def save_images(images, size, image_path, is_grayscale=False):
     return imsave(inverse_transform(images), size, image_path, is_grayscale)
