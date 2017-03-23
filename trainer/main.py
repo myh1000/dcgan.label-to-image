@@ -105,7 +105,6 @@ class txt2pic():
         data = list(self.bucket.list_blobs(prefix='imgs')) # own images into /imgs
         #CUB BIRD DATASET -- download and put first 10 class birds into "/birds" in gcloud bucket
         np.random.shuffle(data)
-        print(data[0])
         # tags = np.zeros((543, self.y_dim), dtype=np.float32)
         # tags[:59, 0] = 1
         # tags[59:118, 1] = 1
@@ -127,12 +126,12 @@ class txt2pic():
             print(" [!] Load failed...")
 
         sample = np.array([
-                self.sess.run(tf.image.random_flip_left_right(get_image(batch_file,
+                get_image(batch_file,
                     input_height=self.image_size,
                     input_width=self.image_size,
                     resize_height=self.output_size,
-                    resize_width=self.output_size))) for batch_file in data[0:self.batch_size]])
-        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "results4/training_ex.jpg")
+                    resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
+        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "results16/training_ex.jpg")
         sample_inputs = np.array(sample).astype(np.float32)[:, :, :, :3]
         sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
         # sample_tags = tags[0:self.batch_size]
@@ -143,11 +142,11 @@ class txt2pic():
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [
-                    self.sess.run(tf.image.random_flip_left_right(get_image(batch_file,
+                    get_image(batch_file,
                         input_height=self.image_size,
                         input_width=self.image_size,
                         resize_height=self.output_size,
-                        resize_width=self.output_size))) for batch_file in batch_images]
+                        resize_width=self.output_size) for batch_file in batch_images]
                 batch_images = np.array(batch).astype(np.float32)
                 # batch_tags = tags[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # noise
@@ -164,8 +163,8 @@ class txt2pic():
                 # errG = self.g_loss.eval({self.real_data: batch_images})
 
                 counter += 1
-                if np.mod(counter, 10) == 1:  # log every 10 iters
-                    print("Epoch: [%2d] [%4d/%4d], d_loss: %.8f, g_loss: %.8f" \
+                # if np.mod(counter, 5) == 1:  # log every 10 iters
+                print("Epoch: [%2d] [%4d/%4d], d_loss: %.8f, g_loss: %.8f" \
                         % (epoch, idx+1, batch_idxs, errD, errG))
 
                 if np.mod(counter, 100) == 1:
@@ -176,7 +175,7 @@ class txt2pic():
                             self.inputs: sample_inputs
                         }
                     )
-                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results4/train_{:03d}_{:04d}.jpg'.format(epoch, idx))
+                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results16/train_{:03d}_{:04d}.jpg'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
                 if np.mod(counter, 500) == 0:
                     print("[Saving] %2d, %d" % (epoch, counter))
