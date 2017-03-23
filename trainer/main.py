@@ -143,11 +143,11 @@ class txt2pic():
             for idx in xrange(batch_idxs):
                 batch_images = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [
-                    get_image(batch_file,
+                    self.sess.run(tf.image.random_flip_left_right(get_image(batch_file,
                         input_height=self.image_size,
                         input_width=self.image_size,
                         resize_height=self.output_size,
-                        resize_width=self.output_size) for batch_file in batch_images]
+                        resize_width=self.output_size))) for batch_file in batch_images]
                 batch_images = np.array(batch).astype(np.float32)
                 # batch_tags = tags[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # noise
