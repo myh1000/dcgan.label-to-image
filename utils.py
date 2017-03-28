@@ -4,14 +4,17 @@ Some codes from https://github.com/Newmu/dcgan_code
 from __future__ import division
 import scipy.misc
 import numpy as np
+from random import random
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
 
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,
               is_crop=False, is_grayscale=False):
-    return transform(imread(image_path, is_grayscale), input_height, input_width,
-                   resize_height, resize_width, is_crop)
+    if random() < .5:
+        return np.fliplr(transform(imread(image_path, is_grayscale), input_height, input_width, resize_height, resize_width, is_crop))
+    else:
+        return transform(imread(image_path, is_grayscale), input_height, input_width, resize_height, resize_width, is_crop)
 
 def save_images(images, size, image_path, is_grayscale=False):
     return imsave(inverse_transform(images), size, image_path, is_grayscale)

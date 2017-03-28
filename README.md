@@ -6,6 +6,12 @@
 
 To run this code on google cloud compute, go to the [gcloud branch](https://github.com/myh1000/dcgan.label-to-image/tree/gcloud).
 
+#### Preliminary Results
+Gonna run this again in the future
+
+![](r64.gif)
+
+
 ## Setup
 
 ### Prerequisites
