@@ -11,6 +11,9 @@ Gonna run this again in the future
 
 ![](r64.gif)
 
+After ~20 hours
+
+![](r642.gif)
 
 ## Setup
 
