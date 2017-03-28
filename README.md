@@ -6,6 +6,8 @@
 
 To run this code on google cloud compute, go to the [gcloud branch](https://github.com/myh1000/dcgan.label-to-image/tree/gcloud).
 
+Does seem to show worse as the output resolution of the images goes beyond 64px; results below were for 108px output.
+
 #### Preliminary Results
 Gonna run this again in the future
 
