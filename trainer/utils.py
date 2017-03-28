@@ -114,7 +114,3 @@ def make_gif(images, fname, duration=2, true_image=False):
     clip.write_gif(temp.name, fps = len(images) / duration)
     temp.seek(0,0)
     blob.upload_from_file(temp, content_type='image/gif')
-
-
-import fire
-fire.Fire()

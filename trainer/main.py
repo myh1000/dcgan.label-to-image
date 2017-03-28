@@ -26,7 +26,7 @@ class txt2pic():
         self.batch_size = batch_size
         print("batch_size: %d" % self.batch_size)
         self.image_size = image_size
-        self.output_size = image_size
+        self.output_size = 64
 
         self.y_dim = 10  # Number of Unique tags
         self.z_dim = 100  # Should represent noise
@@ -131,7 +131,7 @@ class txt2pic():
                     input_width=self.image_size,
                     resize_height=self.output_size,
                     resize_width=self.output_size) for batch_file in data[0:self.batch_size]])
-        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "results16/training_ex.jpg")
+        save_images(sample, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], "results64_cont/training_ex.jpg")
         sample_inputs = np.array(sample).astype(np.float32)[:, :, :, :3]
         sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
         # sample_tags = tags[0:self.batch_size]
@@ -175,7 +175,7 @@ class txt2pic():
                             self.inputs: sample_inputs
                         }
                     )
-                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results16/train_{:03d}_{:04d}.jpg'.format(epoch, idx))
+                    save_images(samples, [int(math.sqrt(self.batch_size)), int(math.sqrt(self.batch_size))], 'results64_cont/train_{:03d}_{:04d}.jpg'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
                 if np.mod(counter, 500) == 0:
                     print("[Saving] %2d, %d" % (epoch, counter))
