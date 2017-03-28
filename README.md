@@ -6,38 +6,34 @@
 
 To run this code on your own machine, go to the [master branch](https://github.com/myh1000/dcgan.label-to-image/tree/master).
 
+Does seem to show worse as the output resolution of the images goes beyond 64px; results below were for 108px output.
+
+#### Preliminary Results
+Gonna run this again in the future
+
+![](r64.gif)
+
+After ~20 hours
+
+![](r642.gif)
+
 ## Setup
 
 ### Prerequisites
- * Install [Cloud SDK](https://cloud.google.com/sdk/)
- * Install [gcloud](https://cloud.google.com/sdk/gcloud/)
- * Google Cloud setup for ML Engine
+- Python
+- numpy
+- [TensorFlow](https://www.tensorflow.org/install/) 1.0+
 
-### Training
+### Training/Testing
+
 ```
-gcloud ml-engine jobs submit training $JOB_NAME \
-                                    --runtime-version 1.0 \
-                                    --job-dir $CLOUD_STORAGE_BUCKET_NAME  \
-                                    --module-name trainer.main \
-                                    --package-path trainer/ \
-                                    --region us-east1 \
-                                    --scale-tier BASIC_GPU \
-                                    -- \
-                                    train $CLOUD_STORAGE_BUCKET_NAME [optional batch_size]
+python main.py train [optional batch_size]
 ```
 
-### Testing
 ```
-gcloud ml-engine jobs submit training $JOB_NAME \
-                                    --runtime-version 1.0 \
-                                    --job-dir $CLOUD_STORAGE_BUCKET_NAME  \
-                                    --module-name trainer.main \
-                                    --package-path trainer/ \
-                                    --region us-east1 \
-                                    --scale-tier BASIC_GPU \
-                                    -- \
-                                    test $CLOUD_STORAGE_BUCKET_NAME [optional image_output_size]
+python main.py test [optional image_output_size]
 ```
+
 
 ## Acknowledgments
 

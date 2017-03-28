@@ -7,7 +7,7 @@ import untangle
 import scipy.misc
 from google.cloud import storage
 import tempfile
-from decorator import retry
+from redo import retry
 from preprocess import *
 
 @retry(urllib2.URLError, tries=4, delay=3, backoff=2)
