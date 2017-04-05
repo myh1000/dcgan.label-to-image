@@ -241,7 +241,7 @@ class txt2pic():
             else:
                 assert tf.get_variable_scope().reuse == False
 
-            f tags is None:
+            if tags is None:
                 h0 = lrelu(conv2d(image, self.df_dim, name='d_h0_conv'))
                 h1 = tf.nn.dropout(lrelu(self.d_bn1(conv2d(h0, self.df_dim*2, name='d_h1_conv'))),0.5)
                 h2 = tf.nn.dropout(lrelu(self.d_bn2(conv2d(h1, self.df_dim*4, name='d_h2_conv'))),0.5)
