@@ -19,6 +19,7 @@ def run(tag_classes, start_count):
         os.makedirs('imgs')
 
     count = int(start_count)
+    start_count = int(start_count) % 1000
     fail = 0
     maxsize = 512
 
@@ -33,12 +34,12 @@ def run(tag_classes, start_count):
 
     for idx, tag in enumerate(tag_classes):
         print("Now downloading... " + tag)
-        if not os.path.exists(tag_classes[0]):
-            os.makedirs(tag_classes[0])
-        for i in xrange(int(math.floor(int(start_count)/100)),10):
+        # if not os.path.exists(tag_classes[0]):
+        #     os.makedirs(tag_classes[0])
+        for i in xrange(int(math.floor(start_count)/100),10):
             stringreturn = readURL(tag, i)
             xmlreturn = untangle.parse(stringreturn)
-            for post in xmlreturn.posts.post[int(start_count)%100:]:
+            for post in xmlreturn.posts.post[start_count%100:]:
                 start_count = 0
                 imgurl = "http:" + post["sample_url"]
                 print imgurl
