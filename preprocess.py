@@ -59,7 +59,7 @@ def process_img(img_path):
     """
     tmp = img_path.split('/')
     cls_name,img_name = tmp[len(tmp)-2], tmp[len(tmp)-1]
-    new_dir_path = os.path.join('faces',cls_name)
+    new_dir_path = os.path.join('',cls_name)
     if not os.path.exists(new_dir_path):
         try:
             os.makedirs(new_dir_path)
