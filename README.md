@@ -8,14 +8,6 @@ To run this code on google cloud compute, go to the [gcloud branch](https://gith
 
 Does seem to show worse as the output resolution of the images goes beyond 64px; results below were for 108px output.
 
-#### Preliminary Results
-Gonna run this again in the future
-
-![](r64.gif)
-
-After ~20 hours
-
-![](r642.gif)
 
 ## Setup
 
@@ -33,6 +25,16 @@ python main.py train [optional batch_size]
 ```
 python main.py test [optional image_output_size]
 ```
+
+
+#### Preliminary Results
+These were created from a dataset of ~4k images, with labels for each colored hair. 
+
+![](r64.gif)
+
+After ~20 hours
+
+![](r642.gif)
 
 
 ## Acknowledgments
