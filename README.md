@@ -1,5 +1,8 @@
 # Generative Adversarial Label to Image Synthesis
 
+Label to Image Synthesis essentially is the generation of images based off of an input label. This can be made more complex through the input of multiple labels, each regarding to a seperate feature of the final image, as well as the accuracy and/or quality of the generated image. Having the model converge to a low error rate is difficult as it is highly dependant on the dataset its trained on.
+
+
 ```main.py``` is based off of a standard DCGAN approach with a conditional layer.
 
 ```main-p2p.py``` attempts to concat the layers at the start and and keep the old DCGAN format.
